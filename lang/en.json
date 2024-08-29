@@ -1,5 +1,5 @@
 {
-  "DOORMACRO.AS_GM": "Execute as GM:",
+  "DOORMACRO.AS_GM": "Execute as GM",
   "DOORMACRO.AsGMTooltip": "Run this embedded script as if the first found GM client had executed it.",
   "DOORMACRO.Door": "Door: {id}",
   "DOORMACRO.never": "Never Automatically",
@@ -8,5 +8,9 @@
   "DOORMACRO.whenLocked": "When Locked",
   "DOORMACRO.whenOpened": "When Opened",
   "DOORMACRO.whenRevealed": "When Revealed",
-  "DOORMACRO.whenUnlocked": "When Unlocked"
+  "DOORMACRO.whenUnlocked": "When Unlocked",
+  "DOORMACRO.Config": {
+    "Title": "Door Macro: {id}",
+    "Command": "Command: {trigger}"
+  }
 }

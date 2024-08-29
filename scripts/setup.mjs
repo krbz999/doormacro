@@ -1,5 +1,5 @@
-import {MODULE, TRIGGERS} from "./scripts/constants.mjs";
-import {callMacro, DoorMacroConfig} from "./scripts/doormacro.mjs";
+import {MODULE, TRIGGERS} from "./constants.mjs";
+import {callMacro, DoorMacroConfig} from "./doormacro.mjs";
 
 // Create a button in a door's header.
 Hooks.on("getWallConfigHeaderButtons", (config, buttons) => {
@@ -8,14 +8,14 @@ Hooks.on("getWallConfigHeaderButtons", (config, buttons) => {
   buttons.unshift({
     class: MODULE,
     icon: "fa-solid fa-door-open",
-    onclick: () => new DoorMacroConfig(config.document).render(true)
+    onclick: () => new DoorMacroConfig({document: config.document}).render({force: true})
   });
 });
 
 Hooks.once("setup", () => {
   WallDocument.prototype.callMacro = async function(type = "never", options = {}) {
     return callMacro(this, type, options);
-  }
+  };
 });
 
 // save previous state of door.
@@ -38,7 +38,6 @@ Hooks.on("preUpdateWall", (wallDoc, update, context, userId) => {
   const toOpen = update.ds === DS.OPEN;
   const toClosed = update.ds === DS.CLOSED;
 
-
   context[MODULE] = {
     [wallDoc.id]: {
       whenClosed: wasOpen && toClosed,
@@ -48,7 +47,7 @@ Hooks.on("preUpdateWall", (wallDoc, update, context, userId) => {
       whenLocked: !wasLocked && toLocked,
       whenUnlocked: wasLocked && (hasDS && !toLocked)
     }
-  }
+  };
 });
 
 Hooks.on("updateWall", (wallDoc, update, context, userId) => {
