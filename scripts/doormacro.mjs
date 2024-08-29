@@ -9,76 +9,104 @@ import {MODULE, TRIGGERS} from "./constants.mjs";
  * @param {string} context.userId     The id of the user who changed the door.
  */
 export function callMacro(wallDoc, trigger, {gmId, userId}) {
-  const data = wallDoc.flags[MODULE]?.[trigger] ?? {};
+  const data = wallDoc.getFlag(MODULE, trigger) ?? {};
   if (!data.command) return;
-  const body = `(async()=>{
-    ${data.command}
-  })();`;
 
   const id = data.asGM ? gmId : userId;
   if ((game.user.id !== id) && !!id) return;
-  const fn = Function("door", "scene", body);
-  return fn.call({}, wallDoc, wallDoc.parent);
+  const fn = new foundry.utils.AsyncFunction("door", "scene", "event", data.command);
+
+  const door = wallDoc;
+  const scene = wallDoc.parent;
+  const event = {user: game.users.get(userId), trigger: trigger};
+  return fn.call({}, door, scene, event);
 }
 
-export class DoorMacroConfig extends MacroConfig {
+export class DoorMacroConfig extends foundry.applications.api.HandlebarsApplicationMixin(
+  foundry.applications.api.DocumentSheetV2
+) {
   /** @override */
-  constructor(wallDocument, options) {
-    super(wallDocument, options);
-    this.isSecret = wallDocument.door === CONST.WALL_DOOR_TYPES.SECRET;
-  }
+  static DEFAULT_OPTIONS = {
+    classes: [MODULE, "standard-form"],
+    position: {width: 500, height: "auto"},
+    window: {title: "DOORMACRO.Config.Title", icon: "fa-solid fa-code", contentClasses: ["standard-form"]},
+    form: {closeOnSubmit: true}
+  };
 
   /** @override */
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
+  static PARTS = {
+    nav: {
+      template: "templates/generic/tab-navigation.hbs"
+    },
+    form: {
       template: "modules/doormacro/templates/doormacro.hbs",
-      classes: ["macro-sheet", "sheet", MODULE],
-      tabs: [{navSelector: ".tabs", contentSelector: ".content-tabs"}],
-      height: 600,
-      width: 600
-    });
-  }
+      scrollable: [""]
+    },
+    footer: {
+      template: "templates/generic/form-footer.hbs"
+    }
+  };
 
-  /**
-   * Override for the sheet id.
-   * @returns {string}      The id of the application.
-   */
-  get id() {
-    return `doormacro-${this.object.id}`;
+  /** @override */
+  get title() {
+    return game.i18n.format(this.options.window.title, {id: this.document.id});
   }
 
   /** @override */
-  async getData() {
-    const data = await super.getData();
-    data.name = game.i18n.format("DOORMACRO.Door", {id: this.object.id});
-    const dm = this.object.flags[MODULE] ?? {};
-    data.triggers = TRIGGERS.map(trigger => {
-      const t = dm[trigger] ?? {};
-      return {
-        type: trigger,
-        command: t.command ?? "",
-        asGM: t.asGM,
-        label: game.i18n.localize(`DOORMACRO.${trigger}`)
-      }
-    });
-    return data;
-  }
+  tabGroups = {
+    primary: "whenOpened"
+  };
 
   /** @override */
-  async _updateObject(event, formData) {
+  async _prepareContext(options) {
+    const tabs = {};
+    const dm = this.document.flags[MODULE] ?? {};
     for (const trigger of TRIGGERS) {
-      if (!formData[`flags.${MODULE}.${trigger}.command`]) {
-        delete formData[`flags.${MODULE}.${trigger}`];
-        formData[`flags.${MODULE}.-=${trigger}`] = null;
+      const t = dm[trigger] ?? {};
+      const label = game.i18n.localize(`DOORMACRO.${trigger}`);
+
+      tabs[trigger] = {
+        id: trigger,
+        group: "primary",
+        label: `DOORMACRO.${trigger}`,
+        asGM: t.asGM,
+        asGMField: new foundry.data.fields.BooleanField({
+          label: "DOORMACRO.AS_GM",
+          hint: "DOORMACRO.AsGMTooltip"
+        }),
+        asGMName: `flags.doormacro.${trigger}.asGM`,
+        command: t.command ?? "",
+        commandField: new foundry.data.fields.JavaScriptField({
+          label: game.i18n.format("DOORMACRO.Config.Command", {
+            trigger: label
+          }),
+          required: true
+        }),
+        commandName: `flags.doormacro.${trigger}.command`
+      };
+    }
+    for (const v of Object.values(tabs)) {
+      v.active = this.tabGroups[v.group] === v.id;
+      v.cssClass = v.active ? "active" : "";
+    }
+
+    return {
+      tabs: tabs,
+      name: game.i18n.format("DOORMACRO.Door", {id: this.document.id}),
+      buttons: [{type: "submit", icon: "fa-solid fa-save", label: "Save"}]
+    };
+  }
+
+  /** @override */
+  _processFormData(event, form, formData) {
+    formData = foundry.utils.expandObject(formData.object);
+    for (const trigger of TRIGGERS) {
+      const cmd = foundry.utils.getProperty(formData, `flags.${MODULE}.${trigger}.command`);
+      if (!cmd) {
+        delete formData.flags?.[MODULE]?.[trigger];
+        foundry.utils.setProperty(formData, `flags.${MODULE}.-=${trigger}`, null);
       }
     }
-    return this.object.update(formData);
-  }
-
-  /** @override */
-  _renderInner(data) {
-    const trigger = TRIGGERS.find(t => this.document.flags[MODULE]?.[t]?.command);
-    if (trigger) this._tabs[0].active = trigger;
-    return super._renderInner(data);
+    return formData;
   }
 }

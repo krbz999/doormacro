@@ -1,38 +1,10 @@
-<form class="editable flexcol doormacro" autocomplete="off">
-
-  <!-- Header -->
-  <header class="sheet-header">
-    <h1>{{name}}</h1>
-  </header>
-
-  <!-- Navigation -->
-  <nav class="sheet-tabs tabs" aria-role="Form Tab Navigation">
-    {{#each triggers}}
-    <a class="trigger" data-tab="{{type}}">{{label}}</a>
-    {{/each}}
-  </nav>
-
-  <!-- Tabs -->
-  <div class="content-tabs">
-    {{#each triggers}}
-    <div class="tab" data-tab="{{type}}">
-      <div class="form-group stacked command" data-type="{{type}}">
-        <div class="command-line">
-          <label>{{localize "Command"}}</label>
-          <div class="as-gm" data-tooltip="DOORMACRO.AsGMTooltip">
-            <label>{{localize "DOORMACRO.AS_GM"}}</label>
-            <input type="checkbox" name="flags.doormacro.{{type}}.asGM" {{checked asGM}}>
-          </div>
-        </div>
-        <textarea name="flags.doormacro.{{type}}.command">{{command}}</textarea>
-      </div>
-    </div>
-    {{/each}}
+<div class="content-tabs">
+  {{#each tabs}}
+  <div class="tab {{#if active}}active{{/if}}" data-tab="{{id}}" data-group="primary">
+    <fieldset data-type="{{id}}">
+      {{formGroup asGMField value=asGM localize=true name=asGMName}}
+      {{formGroup commandField value=command name=commandName}}
+    </fieldset>
   </div>
-
-  <!-- Footer -->
-  <footer class="sheet-footer flexrow">
-    <button type="submit"><i class="fa-solid fa-save"></i> {{localize "Save"}}</button>
-  </footer>
-
-</form>
+  {{/each}}
+</div>
