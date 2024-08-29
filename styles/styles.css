@@ -1,24 +1,26 @@
-.doormacro .content-tabs {
-  flex: 1;
-}
+.doormacro.standard-form {
+  & textarea {
+    resize: none;
+    height: 300px;
+  }
 
-.doormacro .tab[data-tab],
-.doormacro .tab[data-tab] .form-group {
-  height: calc(100% - 5px);
-}
+  .window-content {
+    padding-top: 0;
+  }
 
-.doormacro .command-line,
-.doormacro .as-gm {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+  .sheet-tabs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0;
+    font-size: 12px;
+    border: none;
+    margin: 0;
+    padding: 0;
+    grid-template-rows: 1fr;
 
-.doormacro .tabs {
-  text-align: center;
-  gap: 5px;
-}
-
-.doormacro .trigger.active {
-  text-shadow: 0 0 8px var(--color-shadow-primary)
+    [data-action=tab].active {
+      filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.5));
+      text-decoration: underline;
+    }
+  }
 }
